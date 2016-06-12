@@ -13,6 +13,13 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(0.3 * Double(NSEC_PER_SEC)))
+        dispatch_after(delayTime, dispatch_get_main_queue()) {
+            let youtube = YoutubeViewController()
+            self.presentViewController(youtube, animated: true) {
+                youtube.play("C7wRb9adQUc")
+            }
+        }
     }
 
     override func didReceiveMemoryWarning() {

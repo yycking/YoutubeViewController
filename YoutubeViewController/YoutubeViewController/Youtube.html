@@ -1,0 +1,88 @@
+<!--
+ Using iframe api of youtube to play video.
+ Add safari's html5 function can listen event of leave/enter fullscreen
+ 
+ reference
+ https://developers.google.com/youtube/iframe_api_reference#Examples
+ https://developer.apple.com/library/iad/documentation/AudioVideo/Conceptual/Using_HTML5_Audio_Video/ControllingMediaWithJavaScript/ControllingMediaWithJavaScript.html
+ -->
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body { margin: 0; width:100%%; height:100%%;  background-color:#000000; }
+            html { width:100%%; height:100%%; background-color:#000000; }
+            
+            .embed-container iframe,
+            .embed-container object,
+            .embed-container embed {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%% !important;
+                height: 100%% !important;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="embed-container">
+            <div id="player"></div>
+        </div>
+        <script src="https://www.youtube.com/iframe_api"></script>
+        <script>
+            var player;
+            
+            YT.ready(function() {
+                player = new YT.Player('player', {
+                    "playerVars" : {
+                        "origin" : "https://www.youtube.com",
+                        "showinfo": 0,
+                        "playsinline": 1,
+                        "controls": 0,
+                        "rel": 0,
+                        "modestbranding": 0,
+                        "iv_load_policy": 3
+                    },
+                    "width" : "100%",
+                    "height" : "100%",
+                    "videoId" : "%@",
+                    "events" : {
+                        "onReady" : onReady,
+                        "onStateChange": onPlayerStateChange
+                    }
+                });
+                player.setSize(window.innerWidth, window.innerHeight);
+                     
+                // this will transmit playTime frequently while playng
+                function getCurrentTime() {
+                     var state = player.getPlayerState();
+                     if (state == YT.PlayerState.PLAYING) {
+                        time = player.getCurrentTime()
+                        window.location.href = 'playtime://' + time;
+                     }
+                }
+                     
+                window.setInterval(getCurrentTime, 500);
+            });
+                         
+            function onReady(event) {
+                player.playVideo();
+                window.location.href = 'ready://';
+            }
+            
+            function onPlayerStateChange(event) {
+                if (event.data == YT.PlayerState.ENDED) {
+                    window.location.href = 'ended://';
+                }else if (event.data == YT.PlayerState.PLAYING) {
+                    window.location.href = 'playing://';
+                }else if (event.data == YT.PlayerState.PAUSED) {
+                    window.location.href = 'paused://';
+                }
+            }
+        
+            window.onresize = function() {
+                player.setSize(window.innerWidth, window.innerHeight);
+            }
+        </script>
+    </body>
+</html>
