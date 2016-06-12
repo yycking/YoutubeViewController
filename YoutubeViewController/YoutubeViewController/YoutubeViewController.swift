@@ -7,12 +7,14 @@
 //
 
 import UIKit
+import WebKit
 
 let YOUTUBE_HOST = "www.youtube.com"
 
-class YoutubeViewController: UIViewController, UIWebViewDelegate{
+class YoutubeViewController: UIViewController, WKScriptMessageHandler{
+    @IBOutlet weak var youtubeView: UIView!
     @IBOutlet weak var timeSlider: UISlider!
-    @IBOutlet weak var webView: UIWebView!
+    var webView: WKWebView!
     @IBOutlet weak var bottomBar: UIVisualEffectView!
     @IBOutlet weak var topBar: UIVisualEffectView!
     @IBOutlet weak var currentTime: UILabel!
@@ -20,17 +22,13 @@ class YoutubeViewController: UIViewController, UIWebViewDelegate{
     
     var needUpdate = true
     var hideTimer: NSTimer?
+    var playTimer: NSTimer?
     
     override func viewDidLoad() {
         
         super.viewDidLoad()
 
-        // Do any additional setup after loading the view.
-        webView.autoresizingMask = [.FlexibleWidth , .FlexibleHeight]
-        webView.scrollView.scrollEnabled = false
-        webView.scrollView.bounces = false
-        webView.delegate = self
-        
+        // Do any additional setup after loading the view
     }
     
     override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) {
@@ -52,7 +50,26 @@ class YoutubeViewController: UIViewController, UIWebViewDelegate{
         // Dispose of any resources that can be recreated.
     }
     
+    func createWebView() {
+        if let view = webView {
+            view.removeFromSuperview()
+        }
+        let config = WKWebViewConfiguration()
+        config.allowsInlineMediaPlayback = true
+        config.requiresUserActionForMediaPlayback = false
+        config.userContentController.addScriptMessageHandler(self, name: "youtubeApp")
+        
+        webView = WKWebView(frame: youtubeView.frame, configuration: config)
+        webView.autoresizingMask = [.FlexibleWidth , .FlexibleHeight]
+        webView.scrollView.scrollEnabled = false
+        webView.scrollView.bounces = false
+        
+        youtubeView.addSubview(webView)
+    }
+    
     func play(youtubeID: String) {
+        self.createWebView()
+        
         let path = NSBundle.mainBundle().URLForResource(
             "Youtube", withExtension:"html")
         let embedHTMLTemplate = try! String(
@@ -64,8 +81,11 @@ class YoutubeViewController: UIViewController, UIWebViewDelegate{
     }
     
     @IBAction func close() {
-        webView.stringByEvaluatingJavaScriptFromString("player.stopVideo();")
+        webView.evaluateJavaScript("player.stopVideo();", completionHandler: nil)
         self.dismissViewControllerAnimated(true) {
+        }
+        if let timer = playTimer {
+            timer.invalidate()
         }
     }
     
@@ -75,14 +95,14 @@ class YoutubeViewController: UIViewController, UIWebViewDelegate{
         }
         if needUpdate == false {
             let command = String(format: "player.seekTo(%f, true);", timeSlider.value)
-            webView.stringByEvaluatingJavaScriptFromString(command)
+            webView.evaluateJavaScript(command, completionHandler: nil)
         }
         self.updateBottomBar()
     }
     
     @IBAction func startUpdate() {
         needUpdate = true
-        webView.stringByEvaluatingJavaScriptFromString("player.playVideo();")
+        webView.evaluateJavaScript("player.playVideo();", completionHandler: nil)
     }
     
     @IBAction func stopUpdate() {
@@ -110,53 +130,52 @@ class YoutubeViewController: UIViewController, UIWebViewDelegate{
     
     // MARK: - Web Delegate
     
-    func webView(webView: UIWebView, shouldStartLoadWithRequest request: NSURLRequest, navigationType: UIWebViewNavigationType) -> Bool {
-        if let url = request.URL {
-            let scheme = url.scheme
-            let host = url.host
-            let height = self.view.frame.height
-            
-            switch scheme {
+    func userContentController(userContentController: WKUserContentController, didReceiveScriptMessage message: WKScriptMessage) {
+        if let dict = message.body as? [String:String],
+                method = dict["method"]{
+            switch method {
             case "ready":
                 self.playerViewDidBecomeReady()
-                return false
-                
-            case "playtime":
-                self.didPlayTime(host!)
-                return false
+                break
                 
             case "ended":
                 self.close()
-                return false
+                break
                 
             case "playing":
                 self.hideBar()
-                return false
+                break
                 
             case "paused":
+                let height = self.view.frame.height
                 UIView.animateWithDuration(0.5, animations: {
                     self.topBar.center.y = 22
                     self.bottomBar.center.y = height - 22
                 })
-                return false
+                break
                 
             default:
                 break
             }
         }
-        return true
     }
 
     func playerViewDidBecomeReady() {
-        if let result = webView.stringByEvaluatingJavaScriptFromString("player.getDuration();") {
-            let timeDuration = (result as NSString).floatValue
-            timeSlider.maximumValue = Float(timeDuration)
+        webView.evaluateJavaScript("player.getDuration();") {[weak self] (any,error) -> Void in
+            if let timeDuration = any as? NSNumber, weakSelf = self {
+                weakSelf.timeSlider.maximumValue = timeDuration.floatValue
+            }
         }
+        playTimer = NSTimer.scheduledTimerWithTimeInterval(0.4, target: self, selector: #selector(YoutubeViewController.didPlayTime), userInfo: nil, repeats: true)
     }
     
-    func didPlayTime(playTime: NSString) {
+    func didPlayTime() {
         if needUpdate {
-            timeSlider.value = playTime.floatValue
+            webView.evaluateJavaScript("player.getCurrentTime();") {[weak self] (any,error) -> Void in
+                if let playTime = any as? NSNumber, weakSelf = self {
+                    weakSelf.timeSlider.value = playTime.floatValue
+                }
+            }
         }
         self.updateBottomBar()
     }

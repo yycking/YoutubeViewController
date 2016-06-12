@@ -52,31 +52,32 @@
                     }
                 });
                 player.setSize(window.innerWidth, window.innerHeight);
-                     
-                // this will transmit playTime frequently while playng
-                function getCurrentTime() {
-                     var state = player.getPlayerState();
-                     if (state == YT.PlayerState.PLAYING) {
-                        time = player.getCurrentTime()
-                        window.location.href = 'playtime://' + time;
-                     }
-                }
-                     
-                window.setInterval(getCurrentTime, 500);
             });
                          
             function onReady(event) {
                 player.playVideo();
-                window.location.href = 'ready://';
+                var message = {
+                    'method' : 'ready'
+                };
+                window.webkit.messageHandlers.youtubeApp.postMessage(message);
             }
             
             function onPlayerStateChange(event) {
                 if (event.data == YT.PlayerState.ENDED) {
-                    window.location.href = 'ended://';
+                    var message = {
+                        'method' : 'ended'
+                    };
+                    window.webkit.messageHandlers.youtubeApp.postMessage(message);
                 }else if (event.data == YT.PlayerState.PLAYING) {
-                    window.location.href = 'playing://';
+                    var message = {
+                        'method' : 'playing'
+                    };
+                    window.webkit.messageHandlers.youtubeApp.postMessage(message);
                 }else if (event.data == YT.PlayerState.PAUSED) {
-                    window.location.href = 'paused://';
+                    var message = {
+                        'method' : 'paused'
+                    };
+                    window.webkit.messageHandlers.youtubeApp.postMessage(message);
                 }
             }
         
