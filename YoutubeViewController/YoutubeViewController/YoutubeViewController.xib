@@ -7,11 +7,13 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="YoutubeViewController" customModule="YoutubeViewController" customModuleProvider="target">
             <connections>
-                <outlet property="bottomBar" destination="YNb-Sn-amr" id="jB9-zi-Tlu"/>
                 <outlet property="currentTime" destination="a0O-Eq-1uH" id="N9E-wf-ViG"/>
                 <outlet property="remainderTime" destination="fC6-d1-t3t" id="lLX-oB-bqr"/>
+                <outlet property="seekingBar" destination="YNb-Sn-amr" id="oxT-IG-JFw"/>
                 <outlet property="timeSlider" destination="7R2-Fc-rd8" id="nPk-6S-HPs"/>
+                <outlet property="titleLabel" destination="Q1S-Hb-LG7" id="Ya2-oc-uQH"/>
                 <outlet property="topBar" destination="ykj-l6-s59" id="f47-TF-neC"/>
+                <outlet property="touchView" destination="zaS-e2-kOc" id="4VY-AS-0H0"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
                 <outlet property="youtubeView" destination="LPc-RC-IIw" id="gih-W3-UyF"/>
             </connections>
@@ -24,6 +26,13 @@
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="LPc-RC-IIw">
                     <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                     <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="zaS-e2-kOc">
+                    <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                    <gestureRecognizers/>
+                    <connections>
+                        <outletCollection property="gestureRecognizers" destination="S8M-vk-Q6w" appends="YES" id="3mA-Yd-pPJ"/>
+                    </connections>
                 </view>
                 <visualEffectView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ykj-l6-s59">
                     <rect key="frame" x="0.0" y="0.0" width="600" height="44"/>
@@ -50,13 +59,29 @@
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ani-RM-UGE">
+                                <rect key="frame" x="562" y="7" width="30" height="30"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="30" id="Fsm-9c-bET"/>
+                                    <constraint firstAttribute="height" constant="30" id="W0g-Wd-xu2"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" pointSize="30"/>
+                                <state key="normal" title="❑">
+                                    <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                </state>
+                                <connections>
+                                    <action selector="zoomPlayer:" destination="-1" eventType="touchDown" id="OYg-0G-9vY"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
+                            <constraint firstItem="ani-RM-UGE" firstAttribute="centerY" secondItem="irr-F7-qjp" secondAttribute="centerY" id="115-xb-rcg"/>
                             <constraint firstItem="Q1S-Hb-LG7" firstAttribute="centerY" secondItem="irr-F7-qjp" secondAttribute="centerY" id="8hU-MT-IhC"/>
                             <constraint firstItem="Q1S-Hb-LG7" firstAttribute="leading" secondItem="mee-RW-iu7" secondAttribute="trailing" constant="8" id="9oa-j1-1Df"/>
                             <constraint firstItem="mee-RW-iu7" firstAttribute="leading" secondItem="irr-F7-qjp" secondAttribute="leading" constant="8" id="Hgz-X3-7Ys"/>
-                            <constraint firstAttribute="trailing" secondItem="Q1S-Hb-LG7" secondAttribute="trailing" constant="46" id="U1w-tr-oTE"/>
+                            <constraint firstAttribute="trailing" secondItem="ani-RM-UGE" secondAttribute="trailing" constant="8" id="QNw-Ww-26M"/>
                             <constraint firstItem="Q1S-Hb-LG7" firstAttribute="height" secondItem="irr-F7-qjp" secondAttribute="height" id="hUV-Da-WaX"/>
+                            <constraint firstItem="ani-RM-UGE" firstAttribute="leading" secondItem="Q1S-Hb-LG7" secondAttribute="trailing" constant="8" id="lJM-NA-o5y"/>
                             <constraint firstItem="mee-RW-iu7" firstAttribute="centerY" secondItem="irr-F7-qjp" secondAttribute="centerY" id="nEH-x9-gjc"/>
                         </constraints>
                     </view>
@@ -85,9 +110,9 @@
                                 <rect key="frame" x="69" y="7" width="462" height="31"/>
                                 <connections>
                                     <action selector="changeSecond" destination="-1" eventType="valueChanged" id="g76-dw-hCS"/>
-                                    <action selector="startUpdate" destination="-1" eventType="touchUpInside" id="0YI-f7-T4m"/>
-                                    <action selector="startUpdate" destination="-1" eventType="touchUpOutside" id="J1B-4O-HSj"/>
-                                    <action selector="stopUpdate" destination="-1" eventType="touchDown" id="bfa-MT-VVE"/>
+                                    <action selector="startSeeking" destination="-1" eventType="touchDown" id="rqQ-Zu-zaf"/>
+                                    <action selector="stopSeeking" destination="-1" eventType="touchUpOutside" id="7p0-1r-uQc"/>
+                                    <action selector="stopSeeking" destination="-1" eventType="touchUpInside" id="a0M-C7-PHc"/>
                                 </connections>
                             </slider>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="-00:01" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fC6-d1-t3t" userLabel="remainder">
@@ -120,8 +145,11 @@
             <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
             <constraints>
                 <constraint firstItem="ykj-l6-s59" firstAttribute="width" secondItem="i5M-Pr-FkT" secondAttribute="width" id="1E4-y5-leZ"/>
+                <constraint firstItem="zaS-e2-kOc" firstAttribute="centerX" secondItem="i5M-Pr-FkT" secondAttribute="centerX" id="ByE-8r-P8B"/>
                 <constraint firstItem="LPc-RC-IIw" firstAttribute="leading" secondItem="i5M-Pr-FkT" secondAttribute="leading" id="EBd-Ra-HUn"/>
+                <constraint firstItem="zaS-e2-kOc" firstAttribute="width" secondItem="i5M-Pr-FkT" secondAttribute="width" id="J7A-Ue-yea"/>
                 <constraint firstItem="LPc-RC-IIw" firstAttribute="height" secondItem="i5M-Pr-FkT" secondAttribute="height" id="Oel-1T-GRl"/>
+                <constraint firstItem="zaS-e2-kOc" firstAttribute="centerY" secondItem="i5M-Pr-FkT" secondAttribute="centerY" id="Pw0-jd-7dJ"/>
                 <constraint firstItem="YNb-Sn-amr" firstAttribute="centerX" secondItem="i5M-Pr-FkT" secondAttribute="centerX" id="QAQ-WH-Bch"/>
                 <constraint firstItem="ykj-l6-s59" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" id="R0j-aK-hkE"/>
                 <constraint firstItem="ykj-l6-s59" firstAttribute="centerX" secondItem="i5M-Pr-FkT" secondAttribute="centerX" id="XWA-hd-JGv"/>
@@ -129,7 +157,14 @@
                 <constraint firstItem="LPc-RC-IIw" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" id="bhh-hG-3cG"/>
                 <constraint firstItem="LPc-RC-IIw" firstAttribute="width" secondItem="i5M-Pr-FkT" secondAttribute="width" id="h2x-Dm-gKf"/>
                 <constraint firstItem="YNb-Sn-amr" firstAttribute="width" secondItem="i5M-Pr-FkT" secondAttribute="width" id="sfJ-os-Yrh"/>
+                <constraint firstItem="zaS-e2-kOc" firstAttribute="height" secondItem="i5M-Pr-FkT" secondAttribute="height" id="tWM-9D-9RM"/>
             </constraints>
+            <nil key="simulatedStatusBarMetrics"/>
         </view>
+        <tapGestureRecognizer id="S8M-vk-Q6w">
+            <connections>
+                <action selector="switchMode" destination="-1" id="BcF-s3-DhX"/>
+            </connections>
+        </tapGestureRecognizer>
     </objects>
 </document>

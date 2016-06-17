@@ -12,17 +12,21 @@ import WebKit
 let YOUTUBE_HOST = "www.youtube.com"
 
 class YoutubeViewController: UIViewController, WKScriptMessageHandler{
+    @IBOutlet weak var touchView: UIView!
     @IBOutlet weak var youtubeView: UIView!
     @IBOutlet weak var timeSlider: UISlider!
-    var webView: WKWebView!
-    @IBOutlet weak var bottomBar: UIVisualEffectView!
+    @IBOutlet weak var seekingBar: UIVisualEffectView!
     @IBOutlet weak var topBar: UIVisualEffectView!
     @IBOutlet weak var currentTime: UILabel!
     @IBOutlet weak var remainderTime: UILabel!
+    @IBOutlet weak var titleLabel: UILabel!
+    var webView: WKWebView!
     
-    var needUpdate = true
-    var hideTimer: NSTimer?
-    var playTimer: NSTimer?
+    var isSeeking = false
+    var isFullScreen = false
+    var isZoomIn = false
+    var enterFullScreenTimer: NSTimer?
+    var seekUpdater: NSTimer?
     
     override func viewDidLoad() {
         
@@ -32,17 +36,17 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
     }
     
     override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) {
-        if needUpdate {
-            if let timer = hideTimer {
-                timer.invalidate()
-            }
-            hideTimer = NSTimer.scheduledTimerWithTimeInterval(
-                3.0,
-                target: self,
-                selector: #selector(YoutubeViewController.hideBar),
-                userInfo: nil,
-                repeats: false)
+        if isFullScreen {
+            autoEnterFullScreen()
         }
+        
+        if webView != nil {
+            NSTimer.scheduledTimerWithTimeInterval(0.4, target: self, selector: #selector(zoomPlayer as (Void)->Void), userInfo: nil, repeats: false)
+        }
+    }
+    
+    override func prefersStatusBarHidden() -> Bool {
+        return true
     }
 
     override func didReceiveMemoryWarning() {
@@ -84,48 +88,97 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
         webView.evaluateJavaScript("player.stopVideo();", completionHandler: nil)
         self.dismissViewControllerAnimated(true) {
         }
-        if let timer = playTimer {
+        if let timer = seekUpdater {
             timer.invalidate()
         }
+    }
+    
+    func zoomPlayer() {
+        var bounds = youtubeView.bounds
+        
+        if isZoomIn {
+            if bounds.height < bounds.width {
+                bounds.size.height = bounds.width
+            } else {
+                bounds.size.width = bounds.height
+            }
+        }
+        
+        webView.bounds = bounds
+    }
+    
+    @IBAction func zoomPlayer(sender: AnyObject) {
+        isZoomIn = !isZoomIn
+        zoomPlayer()
+        autoEnterFullScreen()
     }
     
     @IBAction func changeSecond() {
-        if let timer = hideTimer {
+        if let timer = enterFullScreenTimer {
             timer.invalidate()
         }
-        if needUpdate == false {
+        if isSeeking {
             let command = String(format: "player.seekTo(%f, true);", timeSlider.value)
             webView.evaluateJavaScript(command, completionHandler: nil)
         }
-        self.updateBottomBar()
+        self.updateSeekingBar()
+        autoEnterFullScreen()
     }
     
-    @IBAction func startUpdate() {
-        needUpdate = true
+    @IBAction func stopSeeking() {
+        isSeeking = false
         webView.evaluateJavaScript("player.playVideo();", completionHandler: nil)
+        seekUpdater?.fire()
     }
     
-    @IBAction func stopUpdate() {
-        needUpdate = false
+    @IBAction func startSeeking() {
+        isSeeking = true
+        seekUpdater?.invalidate()
     }
     
-    func updateBottomBar() {
-        if topBar.center.y > 0 {
-            let current = Int(timeSlider.value)
-            currentTime.text = String(format: "%02d:%02d", current/60, current%60)
-            
-            let remainder = Int(timeSlider.maximumValue - timeSlider.value)
-            remainderTime.text = String(format: "-%02d:%02d", remainder/60, remainder%60)
+    func updateSeekingBar() {
+        let current = Int(timeSlider.value)
+        currentTime.text = String(format: "%02d:%02d", current/60, current%60)
+        
+        let remainder = Int(timeSlider.maximumValue - timeSlider.value)
+        remainderTime.text = String(format: "-%02d:%02d", remainder/60, remainder%60)
+    }
+    
+    @IBAction func switchMode() {
+        if isFullScreen {
+            toInlineMode()
+        } else {
+            toFullScreen()
         }
+        autoEnterFullScreen()
     }
     
-    func hideBar() {
+    func toInlineMode() {
+        let height = self.view.frame.height
+        UIView.animateWithDuration(0.1, animations: {
+            self.topBar.center.y = 22
+            self.seekingBar.center.y = height - 22
+        })
+        
+        isFullScreen = false
+    }
+    
+    func toFullScreen() {
         let height = self.view.frame.height
         
-        UIView.animateWithDuration(0.5, animations: {
+        UIView.animateWithDuration(0.1, animations: {
             self.topBar.center.y = -44
-            self.bottomBar.center.y = height + 44
+            self.seekingBar.center.y = height + 44
         })
+        
+        isFullScreen = true
+    }
+    
+    func autoEnterFullScreen() {
+        if let timer = enterFullScreenTimer {
+            timer.invalidate()
+        }
+        enterFullScreenTimer = NSTimer.scheduledTimerWithTimeInterval(3.0, target: self, selector: #selector(YoutubeViewController.toFullScreen), userInfo: nil, repeats: false)
     }
     
     // MARK: - Web Delegate
@@ -142,18 +195,6 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
                 self.close()
                 break
                 
-            case "playing":
-                self.hideBar()
-                break
-                
-            case "paused":
-                let height = self.view.frame.height
-                UIView.animateWithDuration(0.5, animations: {
-                    self.topBar.center.y = 22
-                    self.bottomBar.center.y = height - 22
-                })
-                break
-                
             default:
                 break
             }
@@ -166,17 +207,25 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
                 weakSelf.timeSlider.maximumValue = timeDuration.floatValue
             }
         }
-        playTimer = NSTimer.scheduledTimerWithTimeInterval(0.4, target: self, selector: #selector(YoutubeViewController.didPlayTime), userInfo: nil, repeats: true)
+        
+        webView.evaluateJavaScript("player.getVideoData().title;") {[weak self] (any,error) -> Void in
+            if let title = any as? String, weakSelf = self {
+                weakSelf.titleLabel.text = title
+            }
+        }
+        
+        seekUpdater = NSTimer.scheduledTimerWithTimeInterval(0.4, target: self, selector: #selector(YoutubeViewController.didPlayTime), userInfo: nil, repeats: true)
+        autoEnterFullScreen()
     }
     
     func didPlayTime() {
-        if needUpdate {
+        if isFullScreen == false {
             webView.evaluateJavaScript("player.getCurrentTime();") {[weak self] (any,error) -> Void in
                 if let playTime = any as? NSNumber, weakSelf = self {
                     weakSelf.timeSlider.value = playTime.floatValue
                 }
             }
+            self.updateSeekingBar()
         }
-        self.updateBottomBar()
     }
 }
