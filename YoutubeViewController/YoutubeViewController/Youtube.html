@@ -68,6 +68,16 @@
                         'method' : 'ended'
                     };
                     window.webkit.messageHandlers.youtubeApp.postMessage(message);
+                }else if (event.data == YT.PlayerState.PLAYING) {
+                    var message = {
+                        'method' : 'playing'
+                    };
+                    window.webkit.messageHandlers.youtubeApp.postMessage(message);
+                }else if (event.data == YT.PlayerState.PAUSED) {
+                    var message = {
+                        'method' : 'paused'
+                    };
+                    window.webkit.messageHandlers.youtubeApp.postMessage(message);
                 }
             }
         

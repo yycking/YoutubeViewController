@@ -20,11 +20,15 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
     @IBOutlet weak var currentTime: UILabel!
     @IBOutlet weak var remainderTime: UILabel!
     @IBOutlet weak var titleLabel: UILabel!
+    @IBOutlet weak var playButton: UIButton!
+    @IBOutlet weak var zoomButton: UIButton!
+    
     var webView: WKWebView!
     
     var isSeeking = false
     var isFullScreen = false
     var isZoomIn = false
+    var isPlaying = false
     var enterFullScreenTimer: NSTimer?
     var seekUpdater: NSTimer?
     
@@ -84,6 +88,15 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
         webView.loadHTMLString(embedHTML as String, baseURL: NSURL(string: "https://\(YOUTUBE_HOST)"))
     }
     
+    @IBAction func pause() {
+        if isPlaying {
+            webView.evaluateJavaScript("player.pauseVideo();", completionHandler: nil)
+        } else {
+            webView.evaluateJavaScript("player.playVideo();", completionHandler: nil)
+        }
+        autoEnterFullScreen()
+    }
+    
     @IBAction func close() {
         webView.evaluateJavaScript("player.stopVideo();", completionHandler: nil)
         self.dismissViewControllerAnimated(true) {
@@ -108,6 +121,7 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
     }
     
     @IBAction func zoomPlayer(sender: AnyObject) {
+        
         isZoomIn = !isZoomIn
         zoomPlayer()
         autoEnterFullScreen()
@@ -127,7 +141,6 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
     
     @IBAction func stopSeeking() {
         isSeeking = false
-        webView.evaluateJavaScript("player.playVideo();", completionHandler: nil)
         seekUpdater?.fire()
     }
     
@@ -147,6 +160,7 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
     @IBAction func switchMode() {
         if isFullScreen {
             toInlineMode()
+            
         } else {
             toFullScreen()
         }
@@ -189,6 +203,16 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
             switch method {
             case "ready":
                 self.playerViewDidBecomeReady()
+                break
+                
+            case "playing":
+                isPlaying = true
+                playButton.setTitle("▷", forState: .Normal)
+                break
+            
+            case "paused":
+                isPlaying = false
+                playButton.setTitle("▶︎", forState: .Normal)
                 break
                 
             case "ended":
