@@ -8,20 +8,25 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, YoutubeViewControllerDelegate {
 
+    var windows2: UIWindow?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(0.3 * Double(NSEC_PER_SEC)))
-        dispatch_after(delayTime, dispatch_get_main_queue()) {
-            self.onClick()
-        }
+        
     }
     
     @IBAction func onClick() {
         let youtube = YoutubeViewController()
-        self.presentViewController(youtube, animated: true) {
+        youtube.delegate = self
+        windows2 = UIWindow(frame: self.view.bounds)
+        windows2?.rootViewController = youtube
+        windows2?.makeKeyAndVisible()
+        
+        let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(0.1 * Double(NSEC_PER_SEC)))
+        dispatch_after(delayTime, dispatch_get_main_queue()) {
             youtube.play("C7wRb9adQUc")
         }
     }
@@ -31,6 +36,10 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
-
+    // MARK: - YoutubeViewControllerDelegate
+    func youtubeDidClose(youtubeController: YoutubeViewController) {
+        windows2?.hidden = true
+        windows2 = nil
+    }
 }
 

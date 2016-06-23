@@ -11,6 +11,10 @@ import WebKit
 
 let YOUTUBE_HOST = "www.youtube.com"
 
+@objc protocol YoutubeViewControllerDelegate: class {
+    optional func youtubeDidClose(youtubeController: YoutubeViewController)
+}
+
 class YoutubeViewController: UIViewController, WKScriptMessageHandler{
     @IBOutlet weak var touchView: UIView!
     @IBOutlet weak var youtubeView: UIView!
@@ -24,6 +28,7 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
     @IBOutlet weak var zoomButton: UIButton!
     
     var webView: WKWebView!
+    weak var delegate: YoutubeViewControllerDelegate? = nil
     
     var isSeeking = false
     var isFullScreen = false
@@ -107,6 +112,10 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
         }
         if let timer = seekUpdater {
             timer.invalidate()
+        }
+        if let selfDelegate = delegate,
+                action = selfDelegate.youtubeDidClose{
+            action(self)
         }
     }
     
