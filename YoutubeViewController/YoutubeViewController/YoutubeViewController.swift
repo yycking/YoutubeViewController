@@ -63,6 +63,7 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
             view.removeFromSuperview()
         }
         let config = WKWebViewConfiguration()
+        config.selectionGranularity = .Character
         config.allowsInlineMediaPlayback = true
         config.requiresUserActionForMediaPlayback = false
         config.userContentController.addScriptMessageHandler(self, name: "youtubeApp")
@@ -99,6 +100,9 @@ class YoutubeViewController: UIViewController, WKScriptMessageHandler{
     
     @IBAction func close() {
         webView.evaluateJavaScript("player.stopVideo();", completionHandler: nil)
+        webView.loadHTMLString("", baseURL: nil)
+        webView.configuration.userContentController.removeScriptMessageHandlerForName("youtubeApp")
+        webView.stopLoading()
         self.dismissViewControllerAnimated(true) {
         }
         if let timer = seekUpdater {
